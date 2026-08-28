@@ -1,4 +1,4 @@
-# [Project Name] — micro1 Frontier Engineering Challenge 2026
+# RLSguard: micro1 Frontier Engineering Challenge 2026
 
 > Author: Azil (achill06) · Individual entry · Aug 28–31, 2026
 
