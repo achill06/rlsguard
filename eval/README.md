@@ -7,18 +7,18 @@ clean. All data and table names are synthetic, no real users or credentials.
 
 ## Issue type taxonomy (must match what the detector emits)
 
-- `rls_not_enabled` — table has no RLS enabled at all.
-- `permissive_policy` — a policy exists but uses an unconditionally true
+- `rls_not_enabled` : table has no RLS enabled at all.
+- `permissive_policy` : a policy exists but uses an unconditionally true
   USING or WITH CHECK expression.
-- `missing_with_check` — an INSERT-only policy has no WITH CHECK clause at
+- `missing_with_check` : an INSERT-only policy has no WITH CHECK clause at
   all. (UPDATE policies auto-inherit USING as WITH CHECK if omitted, per
   Postgres semantics, so this class applies to INSERT policies only. An
   UPDATE policy with an explicit, weaker-than-USING WITH CHECK is a
   `permissive_policy` case instead, since the hole comes from what was
   written, not what was left out.)
-- `not_scoped_to_caller` — a policy exists and looks like a check, but never
+- `not_scoped_to_caller` : a policy exists and looks like a check, but never
   references `auth.uid()` or an ownership column.
-- `anon_role_overgranted` — the `anon` role has a table-level GRANT it has
+- `anon_role_overgranted` : the `anon` role has a table-level GRANT it has
   no legitimate reason to hold.
 
 ## Files

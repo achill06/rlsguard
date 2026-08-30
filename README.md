@@ -1,4 +1,4 @@
-# rlsguard — Agentic RLS Remediation for Vibe-Coded Supabase Apps
+# rlsguard : Agentic RLS Remediation for Vibe-Coded Supabase Apps
 
 > micro1 Agentic Workflows Hackathon 2026 - individual entry
 
@@ -27,21 +27,21 @@ either an AI-generated suggestion or their own read of unfamiliar SQL.
 
 Four stages, chained by `advanced/agent.py`:
 
-1. **Detect** (`advanced/detector.py`) — parses a schema file directly
+1. **Detect** (`advanced/detector.py`) : parses a schema file directly
    (no model call) and flags five specific issue classes: RLS never
    enabled, a policy that's unconditionally true, an INSERT policy
    missing its WITH CHECK clause, a policy that never references the
    caller's identity, and the `anon` role holding a grant it shouldn't.
-2. **Fix** (`advanced/fixer.py`) — infers the ownership column by
+2. **Fix** (`advanced/fixer.py`) : infers the ownership column by
    tracing the actual foreign key to `auth.users`, and generates
    corrected policy SQL.
-3. **Apply + verify** (`advanced/sandbox.py`, `advanced/verifier.py`) —
+3. **Apply + verify** (`advanced/sandbox.py`, `advanced/verifier.py`) :
    applies the fix inside a disposable local Postgres container that
    replicates Supabase's real `auth.uid()` implementation, then proves
    it by running actual SELECT queries as three simulated identities
    (anonymous, an authenticated non-owner, and the authenticated owner)
    and checking the access pattern is deny/deny/allow.
-4. **Report** (`advanced/report.py`) — a severity-ranked table of every
+4. **Report** (`advanced/report.py`) : a severity-ranked table of every
    finding, whether it was verified, and why.
 
 The baseline (`baseline/baseline_review.py`) is a single unstructured
