@@ -2,6 +2,19 @@
 
 > micro1 Agentic Workflows Hackathon 2026 - individual entry
 
+## Quick start
+
+```bash
+pip3 install -r baseline/requirements.txt --break-system-packages
+pip3 install -r advanced/requirements.txt --break-system-packages
+export GEMINI_API_KEY=your_key_here   # free, from aistudio.google.com/apikey
+
+python3 baseline/baseline_review.py eval/schemas/08_dashboard_multi_issue.sql
+python3 advanced/agent.py eval/schemas/08_dashboard_multi_issue.sql --out /tmp/report.md && cat /tmp/report.md
+```
+
+Full setup, every command, and expected output: see [REPRODUCTION.md](./REPRODUCTION.md).
+
 ## 1. Who has this problem, and why does it matter
 
 Anyone shipping a Supabase-backed app built largely with AI coding tools
