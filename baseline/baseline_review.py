@@ -52,6 +52,7 @@ def review_with_anthropic(schema_text: str) -> str:
 
 
 def review_with_gemini(schema_text: str) -> str:
+    import time
     from google import genai
     from google.genai import types
 
@@ -63,16 +64,24 @@ def review_with_gemini(schema_text: str) -> str:
             threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
         ),
     ]
-    response = client.models.generate_content(
-        model=model,
-        contents=PROMPT_TEMPLATE.format(schema=schema_text),
-        config=types.GenerateContentConfig(safety_settings=safety_settings),
-    )
-    if not response.text:
-        candidate = response.candidates[0] if response.candidates else None
-        finish_reason = getattr(candidate, "finish_reason", "unknown")
-        return f"[No text returned. finish_reason={finish_reason}]"
-    return response.text
+    last_error = None
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=PROMPT_TEMPLATE.format(schema=schema_text),
+                config=types.GenerateContentConfig(safety_settings=safety_settings),
+            )
+            if not response.text:
+                candidate = response.candidates[0] if response.candidates else None
+                finish_reason = getattr(candidate, "finish_reason", "unknown")
+                return f"[No text returned. finish_reason={finish_reason}]"
+            return response.text
+        except Exception as e:
+            last_error = e
+            if attempt < 2:
+                time.sleep(3)
+    return f"[Gemini API unavailable after 3 attempts: {last_error}]"
 
 
 PROVIDERS = {
