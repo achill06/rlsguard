@@ -1,0 +1,141 @@
+{
+  "detector": {
+    "per_file": [
+      {
+        "file": "01_todo_no_rls.sql",
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "02_todo_permissive_using_true.sql",
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "03_recipes_check_issues.sql",
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "04_recipes_policy_not_scoped.sql",
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "05_dashboard_anon_grant.sql",
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "06_todo_multi_issue.sql",
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "07_recipes_multi_issue.sql",
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "08_dashboard_multi_issue.sql",
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "09_notes_multi_issue.sql",
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "10_todo_clean.sql",
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "11_recipes_clean.sql",
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      }
+    ],
+    "true_positives": 18,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+  },
+  "agent": {
+    "per_file": [
+      {
+        "file": "01_todo_no_rls.sql",
+        "findings": 1,
+        "verified": 1
+      },
+      {
+        "file": "02_todo_permissive_using_true.sql",
+        "findings": 2,
+        "verified": 2
+      },
+      {
+        "file": "03_recipes_check_issues.sql",
+        "findings": 2,
+        "verified": 2
+      },
+      {
+        "file": "04_recipes_policy_not_scoped.sql",
+        "findings": 2,
+        "verified": 2
+      },
+      {
+        "file": "05_dashboard_anon_grant.sql",
+        "findings": 1,
+        "verified": 1
+      },
+      {
+        "file": "06_todo_multi_issue.sql",
+        "findings": 2,
+        "verified": 2
+      },
+      {
+        "file": "07_recipes_multi_issue.sql",
+        "findings": 2,
+        "verified": 2
+      },
+      {
+        "file": "08_dashboard_multi_issue.sql",
+        "findings": 3,
+        "verified": 3
+      },
+      {
+        "file": "09_notes_multi_issue.sql",
+        "findings": 3,
+        "verified": 2
+      },
+      {
+        "file": "10_todo_clean.sql",
+        "findings": 0,
+        "verified": 0
+      },
+      {
+        "file": "11_recipes_clean.sql",
+        "findings": 0,
+        "verified": 0
+      }
+    ],
+    "total_findings": 18,
+    "total_verified": 17,
+    "total_manual_review": 1,
+    "verified_rate": 0.944
+  }
+}
