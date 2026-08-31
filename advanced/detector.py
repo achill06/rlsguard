@@ -44,7 +44,7 @@ POLICY_COMMAND_RE = re.compile(
 USING_START_RE = re.compile(r"\busing\s*\(", re.IGNORECASE)
 CHECK_START_RE = re.compile(r"\bwith\s+check\s*\(", re.IGNORECASE)
 GRANT_RE = re.compile(
-    r"grant\s+([\w,\s]+?)\s+on\s+(?:public\.)?(\w+)\s+to\s+([\w,\s]+)",
+    r"grant\s+([\w,\s]+?)\s+on\s+(?:table\s+)?(?:public\.)?(\w+)\s+to\s+([\w,\s]+)",
     re.IGNORECASE,
 )
 
