@@ -35,53 +35,61 @@ Schema:
 {schema}
 """
 
+# Fail fast instead of hanging indefinitely on a stuck connection.
+REQUEST_TIMEOUT_SECONDS = 30
+
 
 def review_with_anthropic(schema_text: str) -> str:
     import anthropic
 
     model = os.environ.get("RLSGUARD_MODEL", "claude-sonnet-5")
-    client = anthropic.Anthropic()
-    response = client.messages.create(
-        model=model,
-        max_tokens=1000,
-        messages=[
-            {"role": "user", "content": PROMPT_TEMPLATE.format(schema=schema_text)}
-        ],
-    )
+    client = anthropic.Anthropic(timeout=REQUEST_TIMEOUT_SECONDS)
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=1000,
+            messages=[
+                {"role": "user", "content": PROMPT_TEMPLATE.format(schema=schema_text)}
+            ],
+        )
+    except Exception as e:
+        return f"[Anthropic API error: {e}]"
+
     return "".join(block.text for block in response.content if block.type == "text")
 
 
 def review_with_gemini(schema_text: str) -> str:
-    import time
     from google import genai
     from google.genai import types
 
-    model = os.environ.get("RLSGUARD_MODEL", "gemini-3.6-flash")
-    client = genai.Client()
+    model = os.environ.get("RLSGUARD_MODEL", "gemini-3.5-flash-lite")
+    # Timeout is in milliseconds. The SDK already retries transient
+    # errors internally (via tenacity), so we don't add our own retry
+    # loop on top of it -- that just multiplies worst-case wait time.
+    client = genai.Client(
+        http_options=types.HttpOptions(timeout=REQUEST_TIMEOUT_SECONDS * 1000)
+    )
     safety_settings = [
         types.SafetySetting(
             category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
             threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
         ),
     ]
-    last_error = None
-    for attempt in range(3):
-        try:
-            response = client.models.generate_content(
-                model=model,
-                contents=PROMPT_TEMPLATE.format(schema=schema_text),
-                config=types.GenerateContentConfig(safety_settings=safety_settings),
-            )
-            if not response.text:
-                candidate = response.candidates[0] if response.candidates else None
-                finish_reason = getattr(candidate, "finish_reason", "unknown")
-                return f"[No text returned. finish_reason={finish_reason}]"
-            return response.text
-        except Exception as e:
-            last_error = e
-            if attempt < 2:
-                time.sleep(3)
-    return f"[Gemini API unavailable after 3 attempts: {last_error}]"
+
+    try:
+        response = client.models.generate_content(
+            model=model,
+            contents=PROMPT_TEMPLATE.format(schema=schema_text),
+            config=types.GenerateContentConfig(safety_settings=safety_settings),
+        )
+    except Exception as e:
+        return f"[Gemini API error: {e}]"
+
+    if not response.text:
+        candidate = response.candidates[0] if response.candidates else None
+        finish_reason = getattr(candidate, "finish_reason", "unknown")
+        return f"[No text returned. finish_reason={finish_reason}]"
+    return response.text
 
 
 PROVIDERS = {
