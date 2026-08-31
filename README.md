@@ -19,15 +19,14 @@ Full setup, every command, and expected output: see [REPRODUCTION.md](./REPRODUC
 
 Anyone shipping a Supabase-backed app built largely with AI coding tools
 (Cursor, Bolt.new, Lovable, v0, Windsurf), without a dedicated security
-review. This isn't hypothetical: in April 2026, Lovable disclosed a
-Broken Object Level Authorization vulnerability that exposed source
-code, database credentials, and chat histories for projects created
-before November 2025, left unpatched for 48 days after initial report.
-This isn't hypothetical: CVE-2025-48757, disclosed in 2025, found that
-170 of 1,645 analyzed Lovable projects (10.3%) had Supabase tables
-directly readable by unauthenticated requests using the public anon
-key, no exploit required, just the same public key the app's own
-frontend uses.
+review. This isn't hypothetical: CVE-2025-48757, disclosed in 2025,
+found that 170 of 1,645 analyzed Lovable projects (10.3%) had Supabase
+tables directly readable by unauthenticated requests using the public
+anon key, no exploit required, just the same public key the app's own
+frontend uses. A follow-up incident in April 2026 exposed source code,
+database credentials, and chat histories for a separate set of Lovable
+projects, left unpatched for 48 days after initial report, confirming
+this remains a live, recurring class of failure, not a one-time bug.
 
 ## 2. What bottleneck this solves
 
