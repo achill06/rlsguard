@@ -23,10 +23,11 @@ review. This isn't hypothetical: in April 2026, Lovable disclosed a
 Broken Object Level Authorization vulnerability that exposed source
 code, database credentials, and chat histories for projects created
 before November 2025, left unpatched for 48 days after initial report.
-Independent analysis afterward found roughly 70% of Lovable-built apps
-shipped with Row-Level Security disabled entirely. RLS is invisible in a
-"happy path" demo, so it's exactly the kind of thing vibe-coding tools
-skip.
+This isn't hypothetical: CVE-2025-48757, disclosed in 2025, found that
+170 of 1,645 analyzed Lovable projects (10.3%) had Supabase tables
+directly readable by unauthenticated requests using the public anon
+key, no exploit required, just the same public key the app's own
+frontend uses.
 
 ## 2. What bottleneck this solves
 
@@ -114,3 +115,18 @@ and this project's core contribution, but it proves internal
 consistency, not that the underlying ownership model is correct for the
 domain. Those are different claims, and it's worth being precise about
 which one you're actually making.
+
+## 9. References
+
+- [CVE-2025-48757](https://nvd.nist.gov/vuln/detail/CVE-2025-48757) — the
+  real, disclosed incident this project is built around: 170 of 1,645
+  analyzed Lovable projects (10.3%) had Supabase tables readable by
+  unauthenticated requests via the public anon key.
+- [OWASP API1:2023 — Broken Object Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/) —
+  the umbrella security category this vulnerability class falls under.
+- [Supabase: Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security) —
+  the authoritative reference this project's `auth.uid()` sandbox and
+  three-role probe methodology were built and verified against. Notably,
+  Supabase's own recommended RLS test pattern (`set local role`,
+  `set local request.jwt.claim.sub`) is the same mechanism
+  `advanced/sandbox.py` implements independently.
