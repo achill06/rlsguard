@@ -117,13 +117,13 @@ which one you're actually making.
 
 ## 9. References
 
-- [CVE-2025-48757](https://nvd.nist.gov/vuln/detail/CVE-2025-48757) — the
+- [CVE-2025-48757](https://nvd.nist.gov/vuln/detail/CVE-2025-48757) : the
   real, disclosed incident this project is built around: 170 of 1,645
   analyzed Lovable projects (10.3%) had Supabase tables readable by
   unauthenticated requests via the public anon key.
-- [OWASP API1:2023 — Broken Object Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/) —
+- [OWASP API1:2023 - Broken Object Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/) :
   the umbrella security category this vulnerability class falls under.
-- [Supabase: Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security) —
+- [Supabase: Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security) :
   the authoritative reference this project's `auth.uid()` sandbox and
   three-role probe methodology were built and verified against. Notably,
   Supabase's own recommended RLS test pattern (`set local role`,
