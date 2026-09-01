@@ -153,6 +153,15 @@ def main():
         args.out.write_text(json.dumps(summary, indent=2))
         print(f"\nFull results written to {args.out}")
 
+    # Regression guard: fail the build if a real drop happens, not just
+    # print numbers and exit clean regardless.
+    if detector_scores["precision"] < 1.0 or detector_scores["recall"] < 1.0:
+        print("\nREGRESSION: detector precision/recall dropped below 1.0", file=sys.stderr)
+        sys.exit(1)
+    if agent_scores["verified_rate"] < 0.90:
+        print("\nREGRESSION: agent verified rate dropped below 0.90", file=sys.stderr)
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,24 @@
+# .github/workflows/eval.yml
+name: eval
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r advanced/requirements.txt
+
+      - name: Run detector and agent eval suite
+        run: python3 eval/run_eval.py --out eval/results.json
