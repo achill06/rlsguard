@@ -101,12 +101,12 @@ def clauses_for_command(command: str, col: str):
     using_clause = ""
     check_clause = ""
     if command in ("select", "delete"):
-        using_clause = f" using (auth.uid() = {col})"
+        using_clause = f" using ((select auth.uid()) = {col})"
     elif command == "insert":
-        check_clause = f" with check (auth.uid() = {col})"
+        check_clause = f" with check ((select auth.uid()) = {col})"
     else:  # update, all
-        using_clause = f" using (auth.uid() = {col})"
-        check_clause = f" with check (auth.uid() = {col})"
+        using_clause = f" using ((select auth.uid()) = {col})"
+        check_clause = f" with check ((select auth.uid()) = {col})"
     return using_clause, check_clause
 
 
@@ -130,13 +130,13 @@ def generate_fix(schema_text: str, finding: dict):
         sql = [
             f"alter table public.{table} enable row level security;",
             f'create policy "{table}_select_own" on public.{table} '
-            f"for select using (auth.uid() = {col});",
+            f"for select using ((select auth.uid()) = {col});",
             f'create policy "{table}_insert_own" on public.{table} '
-            f"for insert with check (auth.uid() = {col});",
+            f"for insert with check ((select auth.uid()) = {col});",
             f'create policy "{table}_update_own" on public.{table} '
-            f"for update using (auth.uid() = {col}) with check (auth.uid() = {col});",
+            f"for update using ((select auth.uid()) = {col}) with check ((select auth.uid()) = {col});",
             f'create policy "{table}_delete_own" on public.{table} '
-            f"for delete using (auth.uid() = {col});",
+            f"for delete using ((select auth.uid()) = {col});",
         ]
         return {
             "manual_review": False,
@@ -191,7 +191,7 @@ def generate_fix(schema_text: str, finding: dict):
             }
         sql = [
             f'alter policy "{policy_name}" on public.{table} '
-            f"with check (auth.uid() = {col});"
+            f"with check ((select auth.uid()) = {col});"
         ]
         return {
             "manual_review": False,
