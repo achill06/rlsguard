@@ -1,6 +1,8 @@
 # rlsguard : Agentic RLS Remediation for Vibe-Coded Supabase Apps
 
-> micro1 Agentic Workflows Hackathon 2026 - individual entry
+Detects, fixes, and proves Row-Level Security vulnerabilities in Supabase
+apps, the vulnerability class behind CVE-2025-48757 and one of the most
+common failures in AI-generated backends.
 
 ## Quick start
 
@@ -12,6 +14,8 @@ export GEMINI_API_KEY=your_key_here   # free, from aistudio.google.com/apikey
 python3 baseline/baseline_review.py eval/schemas/08_dashboard_multi_issue.sql
 python3 advanced/agent.py eval/schemas/08_dashboard_multi_issue.sql --out /tmp/report.md && cat /tmp/report.md
 ```
+
+Or run the whole thing end to end, narrated, in one command: `./demo.sh`
 
 Full setup, every command, and expected output: see [REPRODUCTION.md](./REPRODUCTION.md).
 
@@ -76,6 +80,12 @@ The one non-verified case (`note_tags`, no foreign key to `auth.users`
 to infer ownership from) is a correct decline, not a failure, the
 fixer's manual-review fallback working as designed.
 
+Also tested against a real Lovable-generated app, not just the synthetic
+eval set: `eval/real-world-examples/lovable-notes-schema.sql`. That test
+surfaced a real gap, the detector's grant-parsing missed the `TABLE`
+keyword Lovable's generated SQL includes, fixed and documented in
+`CHANGELOG.md`.
+
 ## 5. Reproduction
 
 See [REPRODUCTION.md](./REPRODUCTION.md) for exact setup and commands
@@ -86,10 +96,11 @@ from a clean environment.
 - **Baseline model**: Gemini 3.6 Flash, via Google's free-tier API.
 - **Advanced pipeline**: no LLM call anywhere. Detection and fixing are
   deterministic Python; verification runs real SQL against a local
-  Postgres container. The "agentic" capabilities here, per the
-  hackathon brief's own definition, are tool use (the sandbox),
-  verification (the three-role probes), and orchestration (the
-  detect-fix-verify-report chain), not per-step LLM judgment.
+  Postgres container. The agentic capabilities here are tool use (the
+  sandbox), verification (the three-role probes), and orchestration
+  (the detect-fix-verify-report chain), not per-step LLM judgment,
+  deliberately, since the goal was proof by execution over
+  conversational assertion.
 - **Development**: built interactively via Claude (chat interface),
   used for design, code generation, and debugging throughout, including
   catching and fixing two real integration bugs (missing default
@@ -129,3 +140,7 @@ which one you're actually making.
   Supabase's own recommended RLS test pattern (`set local role`,
   `set local request.jwt.claim.sub`) is the same mechanism
   `advanced/sandbox.py` implements independently.
+
+## License
+
+MIT, see [LICENSE](./LICENSE).

@@ -95,10 +95,24 @@ Neither of these needs Docker or an API key, both are pure local Python.
 Useful for inspecting what the pipeline found or proposed without paying
 the cost of spinning up a sandbox.
 
+## Running the one-command demo
+
+```bash
+./demo.sh
+```
+
+Runs the baseline, the full agent pipeline, and the evaluation summary
+in sequence, with a banner before each step explaining what it does and
+why. Pauses between steps (press Enter to continue) so it's suitable for
+narrating live during a recording.
+
 ## Data
 
 All schema files in `eval/schemas/` are synthetic, hand-written to
 represent plausible vibe-coded apps (a todo app, a recipe-sharing app, a
 small team dashboard, a notes app), with known, documented issues planted
-in `eval/expected_findings.json`. No real user data, credentials, or
-third-party systems are touched anywhere in this repository.
+in `eval/expected_findings.json`. `eval/real-world-examples/` additionally
+contains a schema pulled from a real Lovable-generated app, used to test
+generalization beyond the hand-written set. No real user data,
+credentials, or third-party systems are touched anywhere in this
+repository.
