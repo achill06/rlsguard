@@ -55,9 +55,10 @@ Four stages, chained by `advanced/agent.py`:
 3. **Apply + verify** (`advanced/sandbox.py`, `advanced/verifier.py`) :
    applies the fix inside a disposable local Postgres container that
    replicates Supabase's real `auth.uid()` implementation, then proves
-   it by running actual SELECT queries as three simulated identities
-   (anonymous, an authenticated non-owner, and the authenticated owner)
-   and checking the access pattern is deny/deny/allow.
+   it by running actual queries, reads and writes, as three simulated
+   identities (anonymous, an authenticated non-owner, and the
+   authenticated owner) and checking the access pattern is
+   deny/deny/allow.
 4. **Report** (`advanced/report.py`) : a severity-ranked table of every
    finding, whether it was verified, and why.
 

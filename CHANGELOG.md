@@ -9,7 +9,8 @@
 | 4. Verifier | Three-role SELECT probes proving access by real query execution. | First run: seeding failed, FK violation, fake identities were never inserted into `auth.users`. | Fixed by seeding `auth.users` first. First full verified run succeeded after. |
 | 5. Orchestrator | Chains detect → fix → apply → verify, originally planned with a uniform 3x retry. | The fixer is deterministic: a failed verification would retry into the identical failure. | Changed design: retry only applies to transient apply errors; a verification failure escalates straight to manual review. |
 | 6. Removed | Early fixer version assumed a fixed `user_id` column name. | Would silently break on any other naming convention. | Replaced by the FK-tracing approach (Iteration 2) before it ever shipped. |
-| Final | Full eval, all 11 schemas. | Detector: 1.0 precision/recall. Agent: 17/18 fixes independently verified by execution, 1 correctly declined. | Headline result: fixes aren't just claimed, they're proven, and the one exception is a correct refusal, not a miss. |
+| 7. Write probes | Extended verification beyond SELECT to INSERT/UPDATE isolation. | First run: 5 previously-verified findings failed, writes were probed against every table regardless of whether a matching policy existed, testing INSERT where no INSERT policy was ever present. | Scoped probes to only test operations with an actual policy (checked via `pg_policies`). Back to 17/18, now proving reads and writes, not just reads. |
+| Final | Full eval, all 11 schemas. | Detector: 1.0 precision/recall. Agent: 17/18 fixes independently verified by real read and write execution, 1 correctly declined. | Headline result: fixes aren't just claimed, they're proven end to end, and the one exception is a correct refusal, not a miss. |
 
 ## Main failure mode
 
@@ -25,9 +26,9 @@ a hidden gap.
 
 ## Hot take
 
-Read-isolation verification proves a fix is internally consistent, not
-that it's the right ownership model. `tasks` verified successfully while
-still being semantically wrong. Proof-by-execution is necessary but not
-sufficient, getting the fixer's judgment right for relational ownership
-is the harder half of this project, and the honest answer to "what's
-next."
+Verification proves a fix is internally consistent, not that it's the
+right ownership model. `tasks` verified successfully, reads and writes
+both, while still being semantically wrong. Proof-by-execution is
+necessary but not sufficient, getting the fixer's judgment right for
+relational ownership is the harder half of this project, and the honest
+answer to "what's next."
