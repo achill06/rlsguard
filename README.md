@@ -11,11 +11,13 @@ pip3 install -r baseline/requirements.txt --break-system-packages
 pip3 install -r advanced/requirements.txt --break-system-packages
 export GEMINI_API_KEY=your_key_here   # free, from aistudio.google.com/apikey
 
-python3 baseline/baseline_review.py eval/schemas/08_dashboard_multi_issue.sql
-python3 advanced/agent.py eval/schemas/08_dashboard_multi_issue.sql --out /tmp/report.md && cat /tmp/report.md
+./rlsguard scan eval/schemas/08_dashboard_multi_issue.sql       # detect only, no Docker needed
+./rlsguard fix eval/schemas/08_dashboard_multi_issue.sql        # full pipeline: detect, fix, apply, verify
+./rlsguard baseline eval/schemas/08_dashboard_multi_issue.sql   # the naive single-prompt comparator
+./rlsguard eval                                                 # full evaluation suite, all seeded schemas
 ```
 
-Or run the whole thing end to end, narrated, in one command: `./demo.sh`
+Or narrated end to end in one go: `./demo.sh`
 
 Full setup, every command, and expected output: see [REPRODUCTION.md](./REPRODUCTION.md).
 
@@ -64,7 +66,9 @@ Four stages, chained by `advanced/agent.py`:
 
 The baseline (`baseline/baseline_review.py`) is a single unstructured
 prompt to Gemini, no tools, no sandbox, no verification, representing
-the reasonable basic way someone would actually approach this task.
+the reasonable basic way someone would actually approach this task. All
+four commands are also available through the unified `./rlsguard`
+entrypoint (`scan`, `fix`, `baseline`, `eval`).
 
 ## 4. Results
 
