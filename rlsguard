@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""
+rlsguard - unified CLI entrypoint.
+
+    rlsguard scan <schema.sql>      detect issues only, no Docker needed
+    rlsguard fix <schema.sql>       full pipeline: detect, fix, apply, verify
+    rlsguard baseline <schema.sql>  run the single-prompt baseline comparator
+    rlsguard eval                   run the full evaluation suite
+"""
+import argparse
+import subprocess
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).parent
+
+
+def run(cmd):
+    result = subprocess.run(cmd, cwd=REPO_ROOT)
+    sys.exit(result.returncode)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="rlsguard",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p_scan = sub.add_parser("scan", help="Detect RLS issues only, no Docker needed")
+    p_scan.add_argument("schema_file")
+
+    p_fix = sub.add_parser("fix", help="Full pipeline: detect, fix, apply, verify (needs Docker)")
+    p_fix.add_argument("schema_file")
+    p_fix.add_argument("--out", default=None)
+
+    p_baseline = sub.add_parser("baseline", help="Run the single-prompt baseline comparator")
+    p_baseline.add_argument("schema_file")
+
+    p_eval = sub.add_parser("eval", help="Run the full evaluation suite against all seeded schemas")
+    p_eval.add_argument("--out", default="eval/results.json")
+
+    args = parser.parse_args()
+
+    if args.command == "scan":
+        run([sys.executable, "advanced/detector.py", args.schema_file])
+    elif args.command == "fix":
+        cmd = [sys.executable, "advanced/agent.py", args.schema_file]
+        if args.out:
+            cmd += ["--out", args.out]
+        run(cmd)
+    elif args.command == "baseline":
+        run([sys.executable, "baseline/baseline_review.py", args.schema_file])
+    elif args.command == "eval":
+        run([sys.executable, "eval/run_eval.py", "--out", args.out])
+
+
+if __name__ == "__main__":
+    main()
