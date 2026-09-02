@@ -34,13 +34,15 @@ from verifier import (
     get_tables_in_declaration_order,
     probe_select,
     check_select_probe,
+    probe_writes,
+    check_write_probe,
 )
 from report import generate_report
 
 MAX_APPLY_RETRIES = 3
 
 
-def process_finding(sandbox: Sandbox, schema_text: str, finding: dict):
+def process_finding(sandbox: Sandbox, schema_text: str, finding: dict, known_ids: dict):
     fix = generate_fix(schema_text, finding)
 
     if fix["manual_review"]:
@@ -72,31 +74,38 @@ def process_finding(sandbox: Sandbox, schema_text: str, finding: dict):
         }
 
     select_results = probe_select(sandbox, finding["table"])
-    verified = check_select_probe(select_results)
+    select_ok = check_select_probe(select_results)
+
+    write_results = probe_writes(sandbox, finding["table"], schema_text, known_ids)
+    write_ok = check_write_probe(write_results)
+
+    verified = select_ok and write_ok
+    probe_detail = {"select": select_results, "write": write_results}
 
     if verified:
         return {
             "finding": finding,
             "status": "verified",
-            "reason": "select probes passed: anon and non-owner denied, owner allowed",
+            "reason": "select and write probes passed: reads and writes both correctly isolated by owner",
             "fix_description": fix["description"],
             "fix_sql": fix["sql"],
             "attempts": attempts_used,
-            "probe_detail": select_results,
+            "probe_detail": probe_detail,
         }
     else:
         return {
             "finding": finding,
             "status": "manual_review",
             "reason": (
-                "fix applied but verification failed; not retrying since the "
+                "fix applied but verification failed "
+                f"({'select' if not select_ok else 'write'} probes); not retrying since the "
                 "fixer is deterministic and a repeat attempt would produce an "
                 "identical, identically-failing result"
             ),
             "fix_description": fix["description"],
             "fix_sql": fix["sql"],
             "attempts": attempts_used,
-            "probe_detail": select_results,
+            "probe_detail": probe_detail,
         }
 
 
@@ -113,11 +122,11 @@ def run(schema_path: Path):
         sandbox.apply_sql(schema_text)
         seed_auth_users(sandbox)
         tables_in_order = get_tables_in_declaration_order(schema_text)
-        seed_tables(sandbox, schema_text, tables_in_order)
+        known_ids = seed_tables(sandbox, schema_text, tables_in_order)
 
         results = []
         for finding in findings:
-            result = process_finding(sandbox, schema_text, finding)
+            result = process_finding(sandbox, schema_text, finding, known_ids)
             results.append(result)
             print(
                 f"[{result['status'].upper()}] {finding['table']} / "

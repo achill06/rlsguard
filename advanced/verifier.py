@@ -123,7 +123,6 @@ def probe_select(sandbox: Sandbox, table: str):
             results[label] = {"error": str(e), "row_count": 0}
     return results
 
-
 def check_select_probe(results):
     anon_ok = results["anon"]["row_count"] == 0
     other_ok = results["authenticated_non_owner"]["row_count"] == 0
@@ -133,8 +132,90 @@ def check_select_probe(results):
     )
     return anon_ok and other_ok and owner_ok
 
+def get_table_policy_commands(sandbox: Sandbox, table: str):
+    rows = sandbox.apply_sql_fetch(
+        f"select cmd from pg_policies where schemaname = 'public' and tablename = '{table}';"
+    )
+    return {r[0] for r in rows} if rows else set()
 
-def verify_finding(sandbox: Sandbox, finding, fix):
+def probe_writes(sandbox: Sandbox, table: str, schema_text: str, known_ids: dict):
+    ownership_col = infer_ownership_column(schema_text, table)
+    if not ownership_col:
+        return None
+
+    policy_commands = get_table_policy_commands(sandbox, table)
+    has_insert_policy = bool(policy_commands & {"INSERT", "ALL"})
+    has_update_policy = bool(policy_commands & {"UPDATE", "ALL"})
+
+    block = find_table_columns_block(schema_text, table)
+    columns = split_top_level(block)
+    results = {}
+
+    if has_insert_policy:
+        values = build_column_values(columns, ownership_col, OTHER_UUID, known_ids)
+        cols_sql = ", ".join(values.keys())
+        vals_sql = ", ".join(values.values())
+        insert_self_sql = f"insert into public.{table} ({cols_sql}) values ({vals_sql}) returning id;"
+        try:
+            rows = sandbox.execute_as("authenticated", OTHER_UUID, insert_self_sql)
+            results["insert_self"] = {"error": None, "row_count": len(rows) if rows else 0}
+        except Exception as e:
+            results["insert_self"] = {"error": str(e), "row_count": 0}
+
+        values2 = build_column_values(columns, ownership_col, OWNER_UUID, known_ids)
+        cols_sql2 = ", ".join(values2.keys())
+        vals_sql2 = ", ".join(values2.values())
+        insert_impersonate_sql = f"insert into public.{table} ({cols_sql2}) values ({vals_sql2}) returning id;"
+        try:
+            rows = sandbox.execute_as("authenticated", OTHER_UUID, insert_impersonate_sql)
+            results["insert_impersonate"] = {"error": None, "row_count": len(rows) if rows else 0}
+        except Exception as e:
+            results["insert_impersonate"] = {"error": str(e), "row_count": 0}
+    else:
+        results["insert_self"] = {"not_applicable": True}
+        results["insert_impersonate"] = {"not_applicable": True}
+
+    if has_update_policy:
+        update_other_sql = f"update public.{table} set {ownership_col} = {ownership_col} returning id;"
+        try:
+            rows = sandbox.execute_as("authenticated", OTHER_UUID, update_other_sql)
+            results["update_as_non_owner"] = {"error": None, "row_count": len(rows) if rows else 0}
+        except Exception as e:
+            results["update_as_non_owner"] = {"error": str(e), "row_count": 0}
+
+        reassign_sql = f"update public.{table} set {ownership_col} = '{OTHER_UUID}' returning id;"
+        try:
+            rows = sandbox.execute_as("authenticated", OWNER_UUID, reassign_sql)
+            results["update_reassign_owner"] = {"error": None, "row_count": len(rows) if rows else 0}
+        except Exception as e:
+            results["update_reassign_owner"] = {"error": str(e), "row_count": 0}
+    else:
+        results["update_as_non_owner"] = {"not_applicable": True}
+        results["update_reassign_owner"] = {"not_applicable": True}
+
+    return results
+
+
+def check_write_probe(results):
+    if results is None:
+        return True
+
+    def ok(key, expect):
+        r = results[key]
+        if r.get("not_applicable"):
+            return True
+        if expect == "some":
+            return r["row_count"] >= 1 and r["error"] is None
+        return r["row_count"] == 0
+
+    return (
+        ok("insert_self", "some")
+        and ok("insert_impersonate", "zero")
+        and ok("update_as_non_owner", "zero")
+        and ok("update_reassign_owner", "zero")
+    )
+
+def verify_finding(sandbox: Sandbox, finding, fix, schema_text: str, known_ids: dict):
     table = finding["table"]
 
     if fix["manual_review"]:
@@ -149,14 +230,21 @@ def verify_finding(sandbox: Sandbox, finding, fix):
     select_results = probe_select(sandbox, table)
     select_ok = check_select_probe(select_results)
 
+    write_results = probe_writes(sandbox, table, schema_text, known_ids)
+    write_ok = check_write_probe(write_results)
+
+    verified = select_ok and write_ok
+    if verified:
+        reason = "select and write probes passed: reads and writes both correctly isolated by owner"
+    elif not select_ok:
+        reason = f"select probes failed: {select_results}"
+    else:
+        reason = f"write probes failed: {write_results}"
+
     return {
-        "verified": select_ok,
-        "reason": (
-            "select probes passed: anon and non-owner denied, owner allowed"
-            if select_ok
-            else f"select probes failed: {select_results}"
-        ),
-        "probe_detail": select_results,
+        "verified": verified,
+        "reason": reason,
+        "probe_detail": {"select": select_results, "write": write_results},
     }
 
 
@@ -181,7 +269,7 @@ def run(schema_path: Path):
         results = []
         for finding in findings:
             fix = generate_fix(schema_text, finding)
-            outcome = verify_finding(sandbox, finding, fix)
+            outcome = verify_finding(sandbox, finding, fix, schema_text, known_ids)
             results.append({"finding": finding, "fix_description": fix["description"], **outcome})
             status = "VERIFIED" if outcome["verified"] else "NOT VERIFIED"
             print(f"\n[{status}] {finding['table']} / {finding['issue_type']}: {outcome['reason']}")
