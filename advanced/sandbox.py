@@ -50,11 +50,25 @@ class Sandbox:
             capture_output=True,
         )
         self._wait_ready(timeout_seconds)
-        self._conn = psycopg2.connect(
-            host="localhost", port=HOST_PORT, dbname=DB_NAME,
-            user=DB_USER, password=DB_PASSWORD,
-        )
+        self._conn = self._connect_with_retry()
         self._conn.autocommit = True
+
+    def _connect_with_retry(self, attempts: int = 5, delay_seconds: float = 1.5):
+        """The official Postgres image briefly runs an internal-only
+        server during startup before the real one binds to the mapped
+        port. pg_isready can report ready during that gap. Retry the
+        actual connection past it instead of trusting readiness alone."""
+        last_error = None
+        for _ in range(attempts):
+            try:
+                return psycopg2.connect(
+                    host="localhost", port=HOST_PORT, dbname=DB_NAME,
+                    user=DB_USER, password=DB_PASSWORD,
+                )
+            except psycopg2.OperationalError as e:
+                last_error = e
+                time.sleep(delay_seconds)
+        raise last_error
 
     def _wait_ready(self, timeout_seconds: int):
         deadline = time.time() + timeout_seconds
